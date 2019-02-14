@@ -6,86 +6,89 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
+
 ANSIBLE_METADATA = {'metadata_version': '1.1',
                     'status': ['preview'],
                     'supported_by': 'community'}
 
+
 DOCUMENTATION = '''
 ---
 module: postgresql_slot
-short_description: Add or remove slots from a PostgreSQL database.
+short_description: Adds or removes slots from a PostgreSQL database.
 description:
   - Adds or removes physical or logical slots from a PostgreSQL database.
 version_added: "2.8"
 options:
   slot_name:
     description:
-      - name of the slot to add or remove
+      - Name of the slot to add or remove.
     required: true
   slot_type:
     description:
-      - slots come in two distinct flavors, physical and logical
-    required: False
-    default: physical
+      - Slots come in two distinct flavors, physical and logical.
+    required: false
+    default: "physical"
     choices: [ "physical", "logical" ]
   immediately_reserve:
     description:
-      - Optional parameter the when True specifies that the LSN for this replication slot be reserved
-      - immediately, otherwise the default, False, specifies that the LSN is reserved on the first connection
-      - from a streaming replication client.
-    required: False
-    default: False
-    choices: [ True, False ]
+      - Whether to reserve the LSN for this replication slot immediately. 
+      - By default, the LSN is reserved on the first connection from a streaming replication client.
+    required: false
+    type: bool
+    default: false
   db:
     description:
-      - Name of the database where you're connecting in order to add or remove only the logical slot to/from
+      - Name of the database where you're connecting in order to add or remove only the logical slot to/from.
     required: false
   output_plugin:
     description:
-      - All logical slots must indicate which output plugin decoder they're using. This parameter does not apply to physical slots.
+      - All logical slots must indicate which output plugin decoder they're using. 
+      - This parameter does not apply to physical slots.
     required: false
     default: "test_decoding"
   login_user:
     description:
-      - The username used to authenticate with
-    default: postgres
+      - The username used to authenticate with.
+    default: "postgres"
   login_password:
     description:
-      - The password used to authenticate with
+      - The password used to authenticate with.
   login_host:
     description:
-      - Host running the database
-    default: localhost
+      - Host running the database.
+    default: "localhost"
   port:
     description:
       - Database port to connect to.
     default: 5432
   login_unix_socket:
     description:
-      - Specifies the directory of the Unix-domain socket(s) on which the server is to listen for connections from client applications.
-    default: None
+      - Specifies the directory of the Unix-domain socket(s) on which the server is to listen for connections 
+      - from client applications.
+    default: ""
   ssl_mode:
     description:
       - Determines whether or with what priority a secure SSL TCP/IP connection will be negotiated with the server.
       - See https://www.postgresql.org/docs/current/static/libpq-ssl.html for more information on the modes.
       - Default of C(prefer) matches libpq default.
-    default: prefer
-    choices: ["disable", "allow", "prefer", "require", verify-ca", "verify-full"]
-    version added: '2.3'
+    default: "prefer"
+    choices: [ "disable", "allow", "prefer", "require", "verify-ca", "verify-full" ]
+    version_added: "2.3"
   ssl_rootcert:
     description:
       - Specifies the name of a file containing the SSL certificate authority (CA) certificate(s).
       - If the file exists, the server's certificate will be verified to be signed by one of these authorities.
-    default: None
-    version_added: '2.3'
+    default: ""
+    version_added: "2.3"
   session_role:
     description:
       - Switch to session role after connecting.
       - The specified session_role must be a role that the current login_user is a member.
       - Permissions checking for SQL commands is carried out as though the session_role were the one
       - that had logged in originally.
-    default: None
-    version_added: '2.8'
+    default: ""
+    version_added: "2.8"
   state:
     description:
       - The slot state. Whether you wish the slot to be present in the system or to not be present there.
@@ -94,13 +97,13 @@ options:
 notes:
   - The default authentication assumes that you are either logging in as or sudo'ing to the C(postgres) account on the host.
   - Physical replication slots were introduced to PostgreSQL with version 9.4, while logical replication slots were added beginning with version 10.0.
-    Physical slots are explained in https://www.postgresql.org/docs/9.4/protocol-replication.html and logical slots which were a later edition are
-    described in https://www.postgresql.org/docs/10/logicaldecoding-explanation.html
+    Physical slots are explained in https://www.postgresql.org/docs/current/protocol-replication.html and logical slots which were a later edition are
+    described in https://www.postgresql.org/docs/current/logicaldecoding-explanation.html
   - This module uses I(psycopg2), a Python PostgreSQL database adapter. You must ensure that psycopg2 is installed on
     the host before using this module. If the remote host is the PostgreSQL server (which is the default case), then PostgreSQL
     must also be installed on the remote host. For Ubuntu-based systems, install the C(postgresql), C(libpq-dev), and
     C(python-psycopg2) packages on the remote host before using this module.
-requirements: [ psycopg2 ]
+requirements: [ "psycopg2" ]
 author: "John Scalia (@jscalia)"
 '''
 
@@ -208,7 +211,7 @@ def main():
             ssl_rootcert=dict(default=None),
             slot_name=dict(required=True),
             slot_type=dict(default="physical", choices=["physical", "logical"]),
-            immediately_reserve=dict(default=False),
+            immediately_reserve=dict(type="bool", default=False),
             session_role=dict(required=False, default=None),
             output_plugin=dict(default="test_decoding"),
             state=dict(default="present", choices=["absent", "present"]),
