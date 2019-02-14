@@ -161,33 +161,33 @@ class NotSupportedError(Exception):
 # PostgreSQL module specific support methods.
 #
 
-def slot_exists(cursor, slot):
-    query = "SELECT * FROM pg_replication_slots WHERE slot_name='%s'" % slot
-    cursor.execute(query, {'slot': slot})
+def slot_exists(cursor, slot_name, slot_type):
+    query = "SELECT * FROM pg_replication_slots WHERE slot_name='%s' AND slot_type='%s'" % (slot_name, slot_type)
+    cursor.execute(query)
     return cursor.rowcount == 1
 
 
-def slot_delete(cursor, slot):
-    if slot_exists(cursor, slot):
-        query = "SELECT pg_drop_replication_slot('%s')" % slot
+def slot_delete(cursor, slot_name, slot_type):
+    if slot_exists(cursor, slot_name, slot_type):
+        query = "SELECT pg_drop_replication_slot('%s')" % slot_name
         cursor.execute(query)
         return True
     else:
         return False
 
 
-def slot_create_physical(cursor, slot, immediately_reserve):
-    if not slot_exists(cursor, slot):
-        query = "SELECT pg_create_physical_replication_slot('%s', %s, False)" % (slot, immediately_reserve)
+def slot_create_physical(cursor, slot_name, slot_type, immediately_reserve):
+    if not slot_exists(cursor, slot_name, slot_type):
+        query = "SELECT pg_create_physical_replication_slot('%s', %s)" % (slot_name, immediately_reserve)
         cursor.execute(query)
         return True
     else:
         return False
 
 
-def slot_create_logical(cursor, slot, output_plugin):
-    if not slot_exists(cursor, slot):
-        query = "SELECT pg_create_logical_replication_slot('%s', '%s')" % (slot, output_plugin)
+def slot_create_logical(cursor, slot_name, slot_type, output_plugin):
+    if not slot_exists(cursor, slot_name, slot_type):
+        query = "SELECT pg_create_logical_replication_slot('%s', '%s')" % (slot_name, output_plugin)
         cursor.execute(query)
         return True
     else:
@@ -223,7 +223,7 @@ def main():
         module.fail_json(msg="the python psycopg2 module is required")
 
     db = module.params["db"]
-    slot = module.params["slot_name"]
+    slot_name = module.params["slot_name"]
     slot_type = module.params["slot_type"]
     immediately_reserve = module.params["immediately_reserve"]
     state = module.params["state"]
@@ -275,23 +275,23 @@ def main():
     try:
         if module.check_mode:
             if state == "present":
-                changed = not slot_exists(cursor, slot)
+                changed = not slot_exists(cursor, slot_name, slot_type)
             elif state == "absent":
-                changed = slot_exists(cursor, slot)
+                changed = slot_exists(cursor, slot_name, slot_type)
         else:
             if state == "absent":
-                changed = slot_delete(cursor, slot)
+                changed = slot_delete(cursor, slot_name, slot_type)
             elif state == "present":
                 if slot_type == "physical":
-                    changed = slot_create_physical(cursor, slot, immediately_reserve)
+                    changed = slot_create_physical(cursor, slot_name, slot_type, immediately_reserve)
                 else:
-                    changed = slot_create_logical(cursor, slot, output_plugin)
+                    changed = slot_create_logical(cursor, slot_name, slot_type, output_plugin)
     except NotSupportedError as e:
         module.fail_json(msg=to_native(e), exception=traceback.format_exc())
     except Exception as e:
         module.fail_json(msg="Database query failed: %s" % to_native(e), exception=traceback.format_exc())
 
-    module.exit_json(changed=changed, db=db, slot_name=slot)
+    module.exit_json(changed=changed, db=db, slot_name=slot_name)
 
 
 if __name__ == '__main__':
